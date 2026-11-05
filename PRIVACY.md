@@ -26,7 +26,7 @@ The current production version requests only **`read:jira-work`** and **`read:pa
 
 **In the current publicly shared, read-only production version**, PromiseProof does not use Forge KVS or other app-managed persistent storage to retain selected Jira/Confluence content or saved commitments. The **Pin** control holds a temporary comparison snapshot in the current app session, not a permanent server-side record. Reloading or closing the session does not preserve a PromiseProof commitment ledger.
 
-Atlassian hosts Forge and the underlying Jira/Confluence services. Atlassian may process and retain operational request data, authentication context or platform logs according to its own agreements, retention practices and privacy policies. PromiseProof does not control that Atlassian-managed retention.
+Atlassian hosts Forge and the underlying Jira/Confluence services. Atlassian may process and retain operational request data, authentication context or platform logs according to its own agreements, retention practices and privacy policies. Atlassian's Forge installation screen indicates that the app publisher may access **Forge application logs for troubleshooting** when vendor log access is enabled. These logs may contain technical errors or request metadata. Site administrators can inspect logs and can disable the publisher's log access through Atlassian administration. PromiseProof does not control Atlassian-managed retention; the publisher does not use Forge KVS to create a persistent commitment ledger in this release.
 
 ## Sharing and external services
 
