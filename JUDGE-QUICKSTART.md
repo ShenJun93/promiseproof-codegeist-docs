@@ -1,6 +1,6 @@
-# PromiseProof — Judge Installation & 8-Minute Test
+# PromiseProof — Judge Installation & Reproducible Test
 
-**Applies to:** PromiseProof — Commitment Impact, Forge production v2.0.0, read-only release (November 2026)  
+**Applies to:** PromiseProof — Commitment Impact, Forge production v2.2.0 (last observed November 10, 2026), read-only release  
 **Products required:** Jira Cloud **and** Confluence Cloud on the **same Atlassian site**  
 **Audience:** A site administrator installing the app; an ordinary Jira/Confluence user trying the workflow  
 **Publisher:** Independent developer, [ShenJun93](https://github.com/ShenJun93)
@@ -19,52 +19,57 @@ A delivery promise is written in Confluence, but its underlying Jira work can mo
 4. Review the only requested scopes: `read:jira-work` and `read:page:confluence`. No Jira or Confluence write scope, KVS permission or external egress is needed by this version.
 5. In Jira, open **Apps → PromiseProof — Commitment Impact** (or the installed Jira global page for the app). If the menu location differs, use Jira's installed-apps navigation.
 
-The publisher's existing fixture IDs are **not portable**. Please create the two test issues and Confluence page below.
+The publisher's existing fixture IDs are **not portable**. Create your own synthetic page and Jira TEST issues. The quick smoke matches the example shown in the production app. The advanced change-history test is a separate fixture.
 
-## 2. Create a portable, reproducible test fixture
+## 2. Quick smoke — create your own synthetic evidence
 
-**Confluence:** Publish a regular page that your test user can read. Include the following **exact standalone sentence** in the published page body:
+**Confluence:** Publish a regular page your test user can read, containing this exact standalone passage:
 
-> Deliver Orion onboarding release by 2027-04-15
+> Deliver demo release by 2027-02-15
 
-Copy the **numeric page ID** from the Confluence page URL. If the URL contains `/pages/123456789/`, enter `123456789` in PromiseProof.
+Copy the actual page URL or numeric page ID. The published passage has **no final period**; paste exactly the same text into the app.
 
-**Jira:** In any accessible test project, create two ordinary issues. Set:
+**Jira:** Create two ordinary TEST issues in an accessible project and set their native **Due date** fields:
 
-| Example issue | Due date | Meaning |
+| Issue (example only) | Due date | Expected comparison |
 |---|---|---|
-| `YOURKEY-1` | `2027-04-14` | Before the promise deadline |
-| `YOURKEY-2` | `2027-04-19` | **4 days after** the promise deadline |
+| `YOURKEY-1` | `2027-02-13` | Two days before the promise |
+| `YOURKEY-2` | `2027-02-20` | **Five days after** the promise |
 
-Use the **real issue keys on your site**, not the example keys. If due dates are missing from the Create form, add them using Jira's issue Edit screen, project configuration, or an authorized site administrator. Jira due dates are test-source changes made by the admin **outside** PromiseProof.
+Use your site's real issue keys, never these placeholders. If the Due date field is missing from Create, ask the Jira administrator to expose it or set it on the issue edit screen. These are source-data changes made by a test user in Jira, **not by PromiseProof**.
 
-## 3. Verify the real evidence
+## 3. Verify the quick smoke (expected: AT_RISK)
 
-In PromiseProof fill:
+In **Jira → Apps → PromiseProof — Commitment Impact**, enter:
 
-| Field | Value |
+| Input | Value |
 |---|---|
-| **Confluence page ID or page URL** | Your actual published Confluence page ID |
-| **Human-confirmed deadline (YYYY-MM-DD)** | `2027-04-15` |
-| **Exact commitment passage from Confluence** | `Deliver Orion onboarding release by 2027-04-15` |
-| **Jira issue keys (1–5, comma-separated)** | The two real test issue keys |
-| **Commitment attestation** | Check **I confirm this passage is an intended delivery commitment** |
+| Confluence page ID or page URL | Your actual published page |
+| Human-confirmed deadline | `2027-02-15` |
+| Exact commitment passage | `Deliver demo release by 2027-02-15` |
+| Jira issue keys | Your two actual TEST keys |
+| Commitment attestation | Confirm the passage is the intended delivery commitment |
 
-Choose **Verify selected sources**.
+Select **Verify selected sources**.
 
-**Expected evidence:** `AT_RISK`, with **one of the two selected Jira due dates later than the attested promise**, and **4 days** of date exposure. The result should identify selected sources rather than fabricate a complete dependency graph. Follow the links to the underlying Jira and Confluence records.
+**Expected:** `AT_RISK / DATE_CONFLICT`; 1 of 2 selected issues is five calendar days later than the published promise. Follow the links to original Jira and Confluence sources. This checks **date alignment of selected work**, not actual release completion or acceptance.
 
-If a user lacks permission to a selected source, the app must fail closed to `UNKNOWN` rather than claim the work is on track.
+**Fail-closed check:** Change only the passage **input in PromiseProof** to `This commitment does not exist in the published page`, without editing Confluence. Verify again. Expect `UNKNOWN / PASSAGE_UNVERIFIED`. Restore the exact published passage and re-Verify; the observed result returns to `AT_RISK`.
 
-## 4. Demonstrate freshness, what-if and safe failure
+**Optional What-if:** Simulate moving the late issue's due date to `2027-02-15`. A hypothetical `ON_TRACK` outcome may appear, but the observed Jira due date must remain `2027-02-20`. PromiseProof does not perform that edit.
 
-- **Session snapshot:** Select **Pin current verified snapshot**. Without changing the real issues, select **Verify selected sources** again. The comparison should report `UNCHANGED`.
-- **Real source change:** The *authorized Jira test issue editor*, outside the PromiseProof app, changes the second issue's due date from `2027-04-19` to `2027-04-21`. Verify again. The observed date exposure should now be **6 days**. A pinned prior observation should distinguish this changed source from the original snapshot. Read-only timeline/history is available for due-date changes when the user's Jira permissions and source history allow it.
-- **Hypothetical scenario:** Explore read-only What-if and simulate bringing the later issue's due date on or before `2027-04-15`. The *simulated* outcome can improve while the actual observed Jira result remains `AT_RISK`. What-if **must not alter Jira**.
-- **Fail-closed:** Replace the exact Confluence passage input with `This commitment does not exist in the published page` (do not edit the real Confluence page). Verify. Expect `UNKNOWN`, restoration guidance and no retained positive decision tools. Restore the exact published passage and verify again.
-- **Permission check:** With a different ordinary test user who lacks access to the selected page or issue, verify that PromiseProof does not expose the restricted source's data or fabricate a positive verdict.
+## 4. Advanced drift/history — separate initial fixture
 
-Optional cleanup: restore the synthetic Jira issue due date. Jira's historical changelog is not erased by reverting a field.
+If you want to demonstrate **ON_TRACK → AT_RISK** instead of starting with an already-late issue, use a **fresh pair of TEST issues** and the same published promise/date (`2027-02-15`).
+
+1. Set both initial Jira Due dates to `2027-02-12` and `2027-02-13`. Verify `ON_TRACK`, then select **Pin current verified snapshot** in the same app session.
+2. **Outside PromiseProof**, an authorized Jira issue editor moves the first Due date from `2027-02-12` to `2027-02-20` (an eight-day extension).
+3. Re-Verify without reloading the app. Expect a source-change indication and `AT_RISK / DATE_CONFLICT` with the moved issue now five days later than the promise.
+4. Inspect bounded Jira due-date history if available. What-if remains separate from observed source changes.
+
+Do not mix this advanced fixture's **initial dates** with the Quick Smoke pair above. A new or permission-limited Jira issue may expose only partial history.
+
+**Permission safety:** When a source is inaccessible to the signed-in test user, the app must return `UNKNOWN` rather than a fabricated positive verdict. Source access follows Atlassian permissions. Do not post private customer or tenant data in support issues.
 
 ## 5. Reviewer acceptance checklist
 
@@ -73,8 +78,8 @@ Optional cleanup: restore the synthetic Jira issue due date. Jira's historical c
 - [ ] Read-only permissions only
 - [ ] Published page and two actual Jira issue keys were read with ordinary user access
 - [ ] `AT_RISK` evidence and later due date were correct
-- [ ] Session Pin → re-Verify `UNCHANGED`
-- [ ] Authorized Jira date edit → live re-Verify reflects the change
+- [ ] Advanced fixture: Pin → re-Verify after Jira change shows changed evidence
+- [ ] Quick smoke → `AT_RISK` five-day gap; advanced test → eight-day Due date move
 - [ ] What-if stayed **hypothetical**
 - [ ] Unavailable exact passage → `UNKNOWN`
 - [ ] Restricted-source permissions did not expose data or produce a false positive
@@ -89,7 +94,7 @@ Please report the site type (test/production), outcomes and non-sensitive screen
 | Cannot locate PromiseProof | Verify the **Jira installation** and navigate to the Jira global-page entry under Apps. |
 | `UNKNOWN` for the page | Confirm the page is published, the page ID is correct, the quoted passage is **exact**, and the signed-in user can read it. |
 | `UNKNOWN` for a Jira issue | Use a real key (not `YOURKEY-1`), confirm the issue exists and the user can read it. |
-| No timeline data | A fresh issue may have no due-date change history; make an authorized due-date edit, then re-Verify. Permissions and Jira history can limit what is visible. |
+| No timeline data | A fresh issue may have no due-date change history; make an authorized due-date edit in the advanced fixture, then re-Verify. Permissions and Jira history can limit what is visible. |
 | Snapshot disappears on reload | By design: Pin is **in-session only**, not persistent server storage. |
 
 ## Privacy, support and limits
